@@ -1,134 +1,82 @@
+drop table if exists Employee 
+drop table if exists Vacation
 
-/*СТРУКТУРА ОБЪЕКТОВ ТИПА TABLE:
-    Promo -> Акция (ID -> Код, Store -> Магазин, Product -> Товар, DateBegin -> Начало, DateEnd -> Окончание)
-    ProductPrice -> Цена товара (Pricelist -> Прайс-лист , Product -> Товар, Price -> Цена)
-(не увидела связи между таблицами)*/ 
+-- Справочник сотрудников
+create table Employee (
+    ID int not null primary key,
+    Code varchar(10) not null unique,
+    Name_ varchar(255) 
+)
 
--- Создание и добавление записей в таблицы
-create table Promo (
-	ID			int
-	,Store		varchar(255)
-	,Product	varchar(255)
-	,DateBegin	date
-	,DateEnd	date
-	);
+insert into Employee (ID, Code, Name_)
+    values (1, 'E01', 'Ivanov Ivan Ivanovich'),
+    (2, 'E02', 'Petrov Petr Petrovich'),
+    (3, 'E03', 'Sidorov Sidr Sidorovich')
+-- 3 записи
 
-insert into Promo (ID, Store, Product, DateBegin, DateEnd)
-    values
-        (1,		'Tesco',	'Gum',			'2018-07-21',	'2018-07-29')
-        ,(2,	'Tesco',	'Fish',			'2018-08-01',	'2018-08-17') -- дата Н и О пересекается с milk, sugar
-        ,(3,	'Tesco',	'Juice',		'2018-06-06',	'2018-06-15')
-        ,(6,	'Tesco',	'Shampoo',		'2018-06-28',	'2018-07-07')
-        ,(7,	'Tesco',	'Coffee',		'2018-06-14',	'2018-06-30')
-        ,(9,	'Tesco',	'Sugar',		'2018-07-05',	'2018-07-19')
-        ,(10,	'Tesco',	'Tea',			'2018-06-01',	'2018-06-05')
-        ,(11,	'Tesco',	'Milk',			'2018-08-03',	'2018-08-14')
-        ,(12,	'Tesco',	'Wet Wipes',	'2018-08-20',	'2018-08-31')
-        ,(13,	'Billa',	'Shampoo',		'2018-06-28',	'2018-07-07')
-        ,(14,	'Billa',	'Coffee',		'2018-06-12',	'2018-06-27')
-        ,(15,	'Billa',	'Sugar',		'2018-08-01',	'2018-08-12') 
-        ,(16,	'Billa',	'Tea',			'2018-06-04',	'2018-06-18')
-        ,(17,	'Billa',	'Milk',			'2018-07-07',	'2018-07-21')
-        ,(18,	'Billa',	'Wet Wipes',	'2018-08-10',	'2018-08-25')
-        ,(19,	'Auchan',	'Coffee',		'2018-06-05',	'2018-06-18')
-        ,(20,	'Auchan',	'Fish',			'2018-07-22',	'2018-08-02')
-        ,(21,	'Auchan',	'Sugar',		'2018-07-01',	'2018-07-31');
--- 21 запись
+-- Отпуска сотрудников
+create table Vacation (
+    ID int not null identity(1, 1) primary key, -- автоинкремент начинается с 1, последующие значения +1
+    ID_Employee int not null references Employee(ID), -- связь с родительской таблицей Employee
+    DateBegin date not null,
+    DateEnd date not null
+    )
 
-create table ProductPrice (
-	Pricelist	varchar(255)
-	,Product	varchar(255)
-	,Price		decimal(18, 2)
-	);
+insert into Vacation (ID_Employee, DateBegin, DateEnd)
+    values (1, '2019-08-10', '2019-09-01')
+    ,(1, '2019-05-13', '2019-06-02')
+    ,(1, '2019-12-29', '2020-01-14')
+    ,(2, '2019-05-01', '2019-05-15')
+-- 4 записи
 
-insert into ProductPrice (Pricelist, Product, Price)
-    values
-        ('Regular',		'T-shirt',		10)
-        ,('Regular',	'Pants',		20)
-        ,('Regular',	'Sweatshirt',	15)
-        ,('Regular',	'Bike',			100)
-        ,('Regular',	'Skate',		50)
-        ,('Exclusive',	'T-shirt',		8)
-        ,('Exclusive',	'Pants',		17)
-        ,('Exclusive',	'Sweatshirt',	13)
-        ,('Exclusive',	'Bike',			90)
-        ,('Exclusive',	'Skate',		43)
-        ,('Summer',		'T-shirt',		12)
-        ,('Summer',		'Pants',		20)
-        ,('Summer',		'Sweatshirt',	12)
-        ,('Summer',		'Bike',			110)
-        ,('Summer',		'Skate',		57)
--- 15 записей
+-- Вывести имена сотрудников, которые не были в отпуске в 2020 году
+-- Должно вернуться 2 строки: Petrov Petr Petrovich, Sidorov Sidr Sidorovich
+-- * - задание желательно решить без использования DISTINCT
 
-/*
-Для каждой таблицы нужно выполнить соответствующее задание
-Код нужно писать сразу под заданием и комментировать после решения задачи
-После выполнения всех задач, сохранить и прислать файл в формате *.sql или ссылку на страницу
+SELECT Name_
+    FROM Employee E LEFT JOIN Vacation V ON E.ID = V.ID_Employee
+    WHERE DateEnd IS NULL OR ID NOT IN( SELECT ID_Employee FROM Vacation
+                              WHERE DateEnd BETWEEN '2020-01-01' AND '2020-12-31')
+
+
+/*Из таблицы Vacation видно, что сотрудник с кодом = 2 не был в отпуске в 2020 году, также видно,
+что сотрудник с кодом = 3 вообще не был в отпуске => действительно, запрос должен вернуть 2 записи
+
+Условия в операторе WHERE:
+    DateEnd IS NULL - вообще не был в отпуске (сотрудника нет в таблице Vacation)
+    в подзапросе отбираю идентификаторы сотрудников, которые не были в отпуске в 2020 году
+    ID IN( SELECT ID_Employee FROM Vacation WHERE DateEnd NOT BETWEEN '2020-01-01' AND '2020-12-31') - не был в отпуске в 2020
+Оператор IN определяет, совпадает ли значение ID со значением в списке.
+BETWEEN '2020-01-01' AND '2020-12-31' - отбирает записи для заданного диапозона значений.
 */
 
------------- 1. Таблица: dbo.Promo
--- Вывести номер акции, название магазина и название продукта, а также
--- номер акции и название продукта, где акция
--- пересекается по датам проведения с другими акциями для ДАННОГО магазина
--- * - желательно исключить повторяющуюся информацию о пересечениях
+-- Написать запрос для данных из Worker.sql, который выводит список периодов и кол-во сотрудников находившихся в этот период в отпуске. 
+-- Необходимо сделать тестовый пример, который воспроизводит разные ситуации пересечения отпусков. 
+-- Результат должен быть со столбцами: DateBegin, DateEnd, Count. Периоды должны быть расположены последовательно. 
+-- Вывести периоды, в которые не было ни одного человека в отпуске. Т.е. чтобы в Count для некоторых периодов была цифра 0.
 
-SELECT DISTINCT Pr1.ID, Pr1.Store, Pr1.Product, 
-    Pr2.ID AS ID_1, Pr2.Product AS Product_1
-FROM Promo Pr1 JOIN Promo Pr2 ON (Pr1.Store = Pr2.Store)
-    AND (Pr1.DateBegin < Pr2.DateEnd)
-    AND (Pr2.DateBegin < Pr1.DateEnd)
+-- Tестовый пример, который воспроизводит разные ситуации пересечения отпусков. ???
+-- Пусть отпуск двухнедельный.. пересечения отпусков для ID = 1, ID = 2:
+insert into Vacation (ID_Employee, DateBegin, DateEnd)
+    values (1, '2022-01-11', '2022-01-25')
+    ,(1, '2022-02-05', '2022-02-19')
+    ,(1, '2022-03-14', '2022-03-28')
+    ,(1, '2022-04-09', '2022-04-23')
+    ,(1, '2022-05-29', '2022-06-12')
+    ,(2, '2022-01-11', '2022-01-25') -- ситуация, когда несколько сотрудников отдыхают в один календарный период 
+    ,(2, '2022-02-10', '2022-02-24') -- ситуация, когда один из сотрудников ещё в отпуске -> отправился другой
+-- 7 записей
 
-/*Выполняется самосоедение: столбцы таблицы сравниваются с теми же столбцами из той же таблицы 
-(Store - для сравнения совпадающих магазинов , DateBegin, DateEnd - сравнение диапозона дат акций).
-С помощью указанных псевдонимов (AS) можно ссылаться на имя одной и той же таблицы дважды.
-Для объедения записей использую внутреннее соединение (INNER JOIN) при условии (ON), что Pr1.Store = Pr2.Store is True.
-Оператор DISTINCT устраняет дубли (не увидела в запросе дублирующие записи).
+SELECT DateBegin, DateEnd, COUNT(ID_Employee) AS Count
+FROM Employee E LEFT JOIN Vacation V ON E.ID = V.ID_Employee
+GROUP BY DateBegin, DateEnd
+ORDER BY DateBegin, DateEnd
 
-Например, для магазина Tesco дата Н и О акции для продукта fish пересекается с продуктами milk, sugar.*/
+/*Оператор SELECT DateBegin, DateEnd, COUNT(ID_Employee) Count - выодит список периодов и кол-во сотрудников находившихся в этот период в отпуске.
+Оператор FROM Employee E LEFT JOIN Vacation V ON E.ID = V.ID_Employee - выводим все записи из левой таблицы и совпадающие из правой,
+ID = 3 никогда не был в отпуске, его нет в правой таблице, но он есть в левой -> агр.ф. COUNT посчитает и выведет соответствующее значение.
+Оператор GROUP BY DateBegin, DateEnd - разбивка всех записей на группы (тесно связан с агрегирующими функциями).
+Каждая запись представляет собой группу, в группе: '2022-01-11', '2022-01-25' - 2 сотрудника, так как период совпал, в остальных по одному.
+Оператор ORDER BY DateBegin, DateEnd - периоды расположены последовательно?..*/
 
-------------- 2. Таблица: dbo.Promo
--- Вывести номер акции, название магазина и название продукта, а также
--- названия магазинов и название продуктов, где акция
--- пересекается по датам проведения с акциями в ДРУГИХ магазинах
--- * - желательно исключить повторяющуюся информацию о пересечениях
-
-SELECT Pr1.ID, Pr1.Store, Pr1.Product,
-    Pr2.Store AS Store_1,
-    Pr2.Product AS Product_1
-FROM Promo Pr1 JOIN Promo Pr2 ON (Pr1.Store != Pr2.Store)
-    AND (Pr1.DateBegin < Pr2.DateEnd)
-    AND (Pr2.DateBegin < Pr1.DateEnd)
-
-/*Разница от предыдущего запроса в том, что сравниваются продукты разных магазинов
-с помощью условия Pr1.Store != Pr2.Store*/
-
------------ 3. Таблица: dbo.ProductPrice
--- Написать запрос, который выводит цены
--- по каждому продукту (в строках) и прайс-листам (в столбцах)
-
-SELECT Product, 
-        sum(CASE WHEN Pricelist = 'Regular' THEN Price END) as Regular,
-        sum(CASE WHEN Pricelist = 'Exclusive' THEN Price END) as Exclusive,
-        sum(CASE WHEN Pricelist = 'Summer' THEN Price END) as Summer
-    FROM ProductPrice
-    GROUP BY Product
-    ORDER BY Product DESC
-
-/*Как известно, почти любую задачу можно решить несколькими способами,
-мне привычнее использовать оператор CASE. Разворот (PIVOT) таблицы, доступен в СУБД SQL Server и Oracle..
-
-CASE в зависимости от указанных условий возвращает одно из множества возможных значений. 
-Если Pricelist = 'Regular' выполняется, то возвращается цена продукта для данного прайса, аналогично для других условий.
-
-Чтобы получить цены для каждого продукта достаточно добавить группировку по полю Product.
-Оператором ORDER BY отсортировала наименования продуктов по убыванию в алфавитном порядке (ASC действует по умолчанию).
-Для корректного выполнения запроса нужна агрегирующая функция, в нашем случае - SUM.
-*/
-
--- отбор данных вручную:
---              Regular   Exclusive   Summer 
--- T-shirt      10          8          12
--- Sweatshirt   15          13         12
--- Skate        50          43         47
--- Pants        20          17         20
--- Bike         100         90         110
+-- НАДЕЮСЬ ПРАВИЛЬНО ПОНЯЛА ЗАДАЧУ...
