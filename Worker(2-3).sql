@@ -67,16 +67,23 @@ insert into Vacation (ID_Employee, DateBegin, DateEnd)
     ,(2, '2022-02-10', '2022-02-24') -- ситуация, когда один из сотрудников ещё в отпуске -> отправился другой
 -- 7 записей
 
-SELECT DateBegin, DateEnd, COUNT(ID_Employee) AS Count
-FROM Employee E LEFT JOIN Vacation V ON E.ID = V.ID_Employee
-GROUP BY DateBegin, DateEnd
-ORDER BY DateBegin, DateEnd
+ИСПРАВЛЕНО: 
+-- Тест решения: https://app.codingrooms.com/w/CV9Xbvi4h9X5 (созданиеЮ добавление, выборка по схеме: mysql.Vacation - БД.Таблица)
 
-/*Оператор SELECT DateBegin, DateEnd, COUNT(ID_Employee) Count - выодит список периодов и кол-во сотрудников находившихся в этот период в отпуске.
-Оператор FROM Employee E LEFT JOIN Vacation V ON E.ID = V.ID_Employee - выводим все записи из левой таблицы и совпадающие из правой,
-ID = 3 никогда не был в отпуске, его нет в правой таблице, но он есть в левой -> агр.ф. COUNT посчитает и выведет соответствующее значение.
-Оператор GROUP BY DateBegin, DateEnd - разбивка всех записей на группы (тесно связан с агрегирующими функциями).
-Каждая запись представляет собой группу, в группе: '2022-01-11', '2022-01-25' - 2 сотрудника, так как период совпал, в остальных по одному.
-Оператор ORDER BY DateBegin, DateEnd - периоды расположены последовательно?..*/
+WITH my_subquery_new_dates AS 
+	( SELECT new_date, SUM(Inc) AS Count
+        FROM (SELECT DateBegin AS new_date, 0 AS Inc FROM mysql.Vacation
+            UNION ALL
+            SELECT DateEnd AS new_date, 1 AS Inc FROM mysql.Vacation 
+     ) AS new_tab
+        GROUP BY new_date ) 
 
--- НАДЕЮСЬ ПРАВИЛЬНО ПОНЯЛА ЗАДАЧУ...
+SELECT LAG(new_date, 1) OVER (ORDER BY new_date) AS DateBegin, new_date AS DateEnd, Count
+FROM my_subquery_new_dates
+ORDER BY new_date
+
+-- /*В первом подзапросе составила даты всех возможных интервалов, потому что дата окончания отпуска какого-то сотрудника будет датой начала нового интервала. 
+То есть, нужно чтобы даты начала интервала и даты окончания интервала находились в одной колонке. Без оператора UNION этого не сделать не получилось. 
+Немного помогло: https://www.sqlshack.com/sql-lag-function-overview-and-examples.
+-- Намучилась с подсчетом кол-ва.. с всем известным оператором COUNT не работает..*/
+
