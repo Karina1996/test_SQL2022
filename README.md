@@ -10,7 +10,10 @@
             в этот период в отпуске. Необходимо сделать тестовый пример, который воспроизводит разные ситуации пересечения отпусков. 
             Результат должен быть со столбцами: DateBegin, DateEnd, Count. Периоды должны быть расположены последовательно. 
             Вывести периоды, в которые не было ни одного человека в отпуске. Т.е. чтобы в Count для некоторых периодов была цифра 0.
-            (пояснения, пусть будут - https://github.com/Karina1996/test_SQL2022/blob/main/photo_2022-06-16_23-39-16.jpg)
+            
+[пояснения к задаче 3, пусть будут](https://github.com/Karina1996/test_SQL2022/blob/main/photo_2022-06-16_23-39-16.jpg)           
+            
+### Задание 4 - [new_task(4)](https://github.com/Karina1996/test_SQL2022/blob/main/new_task(4).sql)
             
  *Результат запросов протестирован в https://www.tutorialspoint.com/execute_sql_online.php., https://app.codingrooms.com/w/CV9Xbvi4h9X5*
  
