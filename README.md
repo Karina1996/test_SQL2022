@@ -15,9 +15,8 @@
             
 ### Задание 4 - [new_task(4)](https://github.com/Karina1996/test_SQL2022/blob/main/new_task(4).sql)
             
- *Результат запросов протестирован в https://www.tutorialspoint.com/execute_sql_online.php., https://app.codingrooms.com/w/CV9Xbvi4h9X5*
+ Результат SQL-запросов протестирован в https://www.tutorialspoint.com/execute_sql_online.php, https://app.codingrooms.com/w/O40Tryq9N4IM.
  
  
- Проблем не возникло. Если непонятно - перечитала еще раз задание. 
- Для себя узнала что-то новое, спасибо за задание!
+ ###### Проблем не возникло. Если непонятно - перечитала еще раз задание. Для себя узнала что-то новое, спасибо за задание!
  
