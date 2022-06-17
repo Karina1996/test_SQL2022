@@ -67,23 +67,42 @@ insert into Vacation (ID_Employee, DateBegin, DateEnd)
     ,(2, '2022-02-10', '2022-02-24') -- ситуация, когда один из сотрудников ещё в отпуске -> отправился другой
 -- 7 записей
 
-ИСПРАВЛЕНО: 
--- Тест решения: https://app.codingrooms.com/w/CV9Xbvi4h9X5 (созданиеЮ добавление, выборка по схеме: mysql.Vacation - БД.Таблица)
+-- drop table mysql.Vacation;
+-- delete from mysql.Vacation;
 
-WITH my_subquery_new_dates AS 
-	( SELECT new_date, SUM(Inc) AS Count
-        FROM (SELECT DateBegin AS new_date, 0 AS Inc FROM mysql.Vacation
-            UNION ALL
-            SELECT DateEnd AS new_date, 1 AS Inc FROM mysql.Vacation 
-     ) AS new_tab
-        GROUP BY new_date ) 
+ИСПРАВЛЕНО: [тест](https://app.codingrooms.com/w/O40Tryq9N4IM)
 
-SELECT LAG(new_date, 1) OVER (ORDER BY new_date) AS DateBegin, new_date AS DateEnd, Count
-FROM my_subquery_new_dates
-ORDER BY new_date
+-- SELECT * FROM mysql.Vacation;
 
--- /*В первом подзапросе составила даты всех возможных интервалов, потому что дата окончания отпуска какого-то сотрудника будет датой начала нового интервала. 
-То есть, нужно чтобы даты начала интервала и даты окончания интервала находились в одной колонке. Без оператора UNION этого не сделать не получилось. 
-Немного помогло: https://www.sqlshack.com/sql-lag-function-overview-and-examples.
--- Намучилась с подсчетом кол-ва.. с всем известным оператором COUNT не работает..*/
+WITH my_subquery_new_dates as
+	( SELECT new_date, SUM(Inc) as sum_Inc
+        FROM (SELECT DateBegin as new_date, 0 as Inc FROM mysql.Vacation 
+              UNION 
+              SELECT DateEnd as new_date, 1 as Inc FROM mysql.Vacation 
+        ) as new_tab_1
+        GROUP BY new_date
+    ),
+    new_tab_2 as
+    ( SELECT V1.DateEnd as DE, V2.DateBegin as DB FROM mysql.Vacation V1 JOIN mysql.Vacation V2 ON V1.ID_Employee != V2.ID_Employee
+        WHERE V1.DateEnd BETWEEN V2.DateBegin AND V2.DateEnd
+    )
 
+SELECT LAG(new_date, 1) OVER (ORDER BY new_date) as DateBegin, 
+            new_date as DateEnd, 
+            (CASE 
+                WHEN new_date IN(SELECT DE FROM new_tab_2) THEN sum_Inc+1
+                WHEN new_date IN(SELECT DB FROM new_tab_2 ) THEN sum_Inc+1
+                ELSE sum_Inc
+            END) as Count
+FROM my_subquery_new_dates;
+
+/*На первом шаге (в первом подзапросе) составила даты всех возможных интервалов, потому что дата окончания отпуска какого-то сотруднгика будет датой начала нового интервала. То есть, нужно чтобы даты начала интервала и даты окончания интервала находились в одной колонке. Без оператора UNION этого не сделать не получилось. Немного помогло: https://www.sqlshack.com/sql-lag-function-overview-and-examples.
+Намучилась с подсчетом кол-ва..
+
+С помощью оконной функции вывела предыдущее значение столбца по порядку сортировки new_date - LAG(new_date, 1) OVER (ORDER BY new_date)
+
+Оконная функция - функция, которая работает с выделенным набором строк (окном, партицией) и выполняет вычисление для этого набора строк в отдельном столбце. 
+
+Главное отличие оконных функций от функций агрегации с группировкой? 
+При использовании агрегирующих функций предложение GROUP BY сокращает количество строк в запросе с помощью их группировки.
+При использовании оконных функций количество строк в запросе не уменьшается по сравнении с исходной таблицей.*/
